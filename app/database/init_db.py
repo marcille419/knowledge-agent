@@ -2,6 +2,7 @@ from app.database.base import Base
 from app.database.db import engine
 
 from app.models.user import User
+from app.models.document import Document
 
 Base.metadata.create_all(bind=engine)
 
