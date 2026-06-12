@@ -1,0 +1,3 @@
+DATABASE_URL = (
+    "mysql+pymysql://root:admin123@localhost:3306/knowledge_agent"
+)
