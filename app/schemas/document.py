@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel
+from typing import List
 
 class DocumentInfo(BaseModel):
     id: int
@@ -11,3 +12,9 @@ class DocumentInfo(BaseModel):
     model_config = {
         "from_attributes" : True
     }
+
+class DocumentList(BaseModel):
+    total: int
+    items: List[DocumentInfo]
+    page: int
+    size: int

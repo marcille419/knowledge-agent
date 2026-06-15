@@ -1,6 +1,9 @@
 import os
 import uuid
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from email.policy import default
+from idlelib.query import Query
+
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database.db import get_db
@@ -8,7 +11,7 @@ from app.models.document import Document
 from app.models.user import User
 from app.core.deps import get_current_user
 from app.schemas.response import BaseResponse
-from app.schemas.document import DocumentInfo
+from app.schemas.document import DocumentInfo, DocumentList
 
 router = APIRouter(
     prefix = "/document",
@@ -93,4 +96,41 @@ def upload_document(
     return BaseResponse(
         message = "上传成功",
         data = DocumentInfo.model_validate(doc)
+    )
+
+@router.get("/list", response_model = BaseResponse)
+def get_document_list(
+        page: int = Query(default = 1, ge = 1),
+        size: int = Query(default = 10, ge = 1, le = 50),
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    offset = (page - 1) * size
+
+    query = (
+        db.query(Document)
+        .filter(Document.user_id == current_user.id)
+    )
+
+    total = query.count()
+
+    documents = (
+        query
+        .order_by(Document.created_at.desc())
+        .offset(offset)
+        .limit(size)
+        .all()
+    )
+
+    return BaseResponse(
+        message = "获取成功",
+        data = DocumentList(
+            total = total,
+            page = page,
+            size = size,
+            items = [
+                DocumentInfo.model_validate(doc)
+                for doc in documents
+            ]
+        )
     )
