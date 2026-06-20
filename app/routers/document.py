@@ -1,7 +1,9 @@
 import os
 import uuid
+import logging
 from email.policy import default
 from idlelib.query import Query
+from pathlib import Path
 
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -133,4 +135,55 @@ def get_document_list(
                 for doc in documents
             ]
         )
+    )
+
+logger = logging.getLogger(__name__)
+@router.delete("/{document_id}", response_model = BaseResponse)
+def delete_document(
+        document_id: int = Path(..., ge = 1, description = "要删除的文档id"),
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    doc = (db.query(Document)
+       .filter(Document.id == document_id,
+               Document.user_id == current_user.id)
+       .first()
+    )
+
+    if not doc:
+        raise HTTPException(
+            status_code = 404,
+            detail = "文档不存在"
+        )
+
+    file_path = doc.file_path
+    doc_id = doc.id
+
+    try:
+        db.delete(doc)
+        db.commit()
+
+    except Exception as e:
+        db.rollback()
+        logger.error(
+            f"删除文档事务失败: document_id={document_id}, error={str(e)}",
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code = 500,
+            detail = "删除失败"
+        )
+
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+    except Exception as e:
+        logger.warning(
+            f"物理文件残留: user_id={current_user.id}, document_id={doc_id}, file_path={file_path}, error={str(e)}",
+            exc_info=True
+        )
+
+    return BaseResponse(
+        message = "删除成功"
     )

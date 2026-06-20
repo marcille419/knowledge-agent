@@ -4,17 +4,18 @@
 
 ## 项目简介
 
-基于 FastAPI + LangChain + Chroma + DeepSeek 构建的企业知识库问答系统。
+基于 FastAPI + LangChain + ChromaDB + DeepSeek 构建的企业知识库问答系统。
 
-支持：
+系统支持：
 
-- 用户注册登录
-- JWT身份认证
-- 文档上传
-- 文档解析
-- 向量化存储
-- RAG检索增强生成
-- Agent工具调用
+* 用户注册登录
+* JWT身份认证
+* 文档上传管理
+* 文档解析
+* 文档切分（Chunk）
+* 向量化存储
+* RAG检索增强生成
+* Agent工具调用
 
 ---
 
@@ -22,22 +23,23 @@
 
 ### Backend
 
-- FastAPI
-- SQLAlchemy
-- MySQL
-- JWT
+* FastAPI
+* SQLAlchemy
+* MySQL
+* Pydantic
+* JWT
 
 ### AI
 
-- LangChain
-- DeepSeek API
-- ChromaDB
-- Embedding Model
+* LangChain
+* DeepSeek API
+* ChromaDB
+* Embedding Model
 
 ### Deploy
 
-- Docker
-- Nginx
+* Docker
+* Nginx
 
 ---
 
@@ -45,90 +47,111 @@
 
 ### 用户系统
 
-- [x] 用户注册
-- [x] 用户登录
-- [x] JWT认证
-- [x] 获取当前用户
+* [x] 用户注册
+* [x] 用户登录
+* [x] JWT认证
+* [x] 获取当前用户
 
-### 知识库（Document模块）
+### 文档管理
 
-- [x] 文件上传（UploadFile + UUID存储）
-- [x] 文件类型校验（后缀 + Content-Type）
-- [x] 文件大小限制（20MB）
-- [x] 文件元数据入库（MySQL + SQLAlchemy）
-- [x] 用户级文件隔离（user_id绑定）
-- [ ] PDF解析
-- [ ] DOCX解析
-- [ ] 向量化
+* [x] 文件上传
+* [x] 文件列表
+* [x] 文件删除
+* [x] 用户数据隔离
+* [x] 文件大小校验
+* [x] 文件类型校验
+
+### 知识库
+
+* [ ] PDF解析
+* [ ] DOCX解析
+* [ ] TXT解析
+* [ ] 文档切分
+* [ ] Chunk存储
 
 ### RAG
 
-- [ ] 文档切分
-- [ ] Embedding
-- [ ] Chroma
-- [ ] 检索增强
+* [ ] Embedding
+* [ ] ChromaDB
+* [ ] 检索增强生成
 
 ### Agent
 
-- [ ] Tool Calling
-- [ ] 多工具编排
+* [ ] Tool Calling
+* [ ] 多工具编排
 
 ---
 
+## 已实现接口
+
+### 用户模块
+
+POST /user/register
+
+POST /user/login
+
+GET /user/info
+
+### 文档模块
+
+POST /document/upload
+
+GET /document/list
+
+DELETE /document/{document_id}
+
+---
+```
 ## 项目结构
 
-```text
 app/
-│
-├── core/              # 配置与依赖
-├── database/          # 数据库连接
-├── models/            # ORM模型
-├── schemas/           # Pydantic模型
-├── routers/           # 路由
-│   ├── user.py
-│   ├── document.py
-│
-├── utils/             # 工具类
-│   ├── jwt.py
-│   ├── security.py
-│
-├── uploads/           # 文件存储目录
-│   └── documents/
-│
+
+├── core/             # 配置与认证
+
+├── database/         # 数据库连接
+
+├── models/           # ORM模型
+
+├── schemas/          # Pydantic模型
+
+├── routers/          # API路由
+
+├── uploads/          # 文件存储目录
+
 └── main.py
 ```
-
 ---
 
 ## 开发日志
 
 ### Day1
 
-- FastAPI项目初始化
-- MySQL连接
-- SQLAlchemy配置
-- 用户模型设计
+* FastAPI项目初始化
+* MySQL连接
+* SQLAlchemy配置
+* 用户模型设计
 
 ### Day2
 
-- 用户注册
-- bcrypt密码加密
-- JWT登录认证
-- 获取当前用户
+* 用户注册
+* bcrypt密码加密
+* JWT登录认证
+* 获取当前用户
 
 ### Day3
 
-- 实现 Document 文件上传模块
-- 支持文件上传接口（/document/upload）
-- 文件UUID重命名存储
-- 文件大小限制与安全校验
-- Content-Type + 后缀双重校验
-- 用户级数据绑定（JWT + current_user）
-- 文件信息写入数据库（Document表）
+* 文档上传接口
+* 文件大小校验
+* 文件类型校验
+* UUID文件存储
+* 文档信息入库
 
-### Day4（计划）
+### Day4
 
-- Document列表接口（分页查询）
-- 用户级数据隔离查询
-- SQLAlchemy filter优化
-- response_model标准化
+* 文档列表接口
+* 分页查询
+* 用户数据隔离
+* 文档删除接口
+* 数据库事务处理
+* 文件与数据库同步删除
+* 异常处理与日志记录
