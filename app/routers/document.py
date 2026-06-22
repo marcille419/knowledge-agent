@@ -1,11 +1,9 @@
 import os
 import uuid
 import logging
-from email.policy import default
-from idlelib.query import Query
-from pathlib import Path
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, Path
+
 from sqlalchemy.orm import Session
 
 from app.database.db import get_db
@@ -14,6 +12,7 @@ from app.models.user import User
 from app.core.deps import get_current_user
 from app.schemas.response import BaseResponse
 from app.schemas.document import DocumentInfo, DocumentList
+from app.services.document_service import process_document
 
 router = APIRouter(
     prefix = "/document",
@@ -186,4 +185,28 @@ def delete_document(
 
     return BaseResponse(
         message = "删除成功"
+    )
+
+@router.post("/{document_id}/process", response_model = BaseResponse)
+def process_document_route(
+        document_id: int,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
+):
+    doc = (db.query(Document)
+           .filter(Document.id == document_id,
+                   Document.user_id == current_user.id)
+           .first()
+           )
+
+    if not doc:
+        raise HTTPException(
+            status_code = 404,
+            detail = "文档不存在"
+        )
+
+    process_document(doc, db)
+
+    return BaseResponse(
+        message = "文档解析完成"
     )

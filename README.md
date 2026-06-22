@@ -65,9 +65,12 @@
 
 * [ ] PDF解析
 * [ ] DOCX解析
-* [ ] TXT解析
-* [ ] 文档切分
-* [ ] Chunk存储
+* [x] TXT解析
+* [x] Markdown解析
+* [x] 文档切分（Chunk）
+* [x] Chunk存储
+* [x] 文档重新处理（Process）
+
 
 ### RAG
 
@@ -99,6 +102,8 @@ POST /document/upload
 GET /document/list
 
 DELETE /document/{document_id}
+
+POST /document/{document_id}/process
 
 ---
 ```
@@ -155,3 +160,16 @@ app/
 * 数据库事务处理
 * 文件与数据库同步删除
 * 异常处理与日志记录
+
+### Day5
+
+* TXT解析器
+* Markdown解析器
+* 文件编码自动识别
+* LangChain Chunk切分
+* DocumentChunk模型设计
+* Chunk批量存储
+* 文档处理接口（Process）
+* Chunk重新生成机制
+* 数据库事务控制
+
