@@ -64,7 +64,7 @@
 ### 知识库
 
 * [x] PDF解析
-* [ ] DOCX解析
+* [x] DOCX解析
 * [x] TXT解析
 * [x] Markdown解析
 * [x] 文档切分（Chunk）
