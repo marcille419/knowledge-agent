@@ -63,7 +63,7 @@
 
 ### 知识库
 
-* [ ] PDF解析
+* [x] PDF解析
 * [ ] DOCX解析
 * [x] TXT解析
 * [x] Markdown解析
