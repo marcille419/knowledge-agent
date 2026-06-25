@@ -10,19 +10,18 @@ def _get_embeddings() -> HuggingFaceEmbeddings:
     return AIModels.embeddings
 
 def embed_documents(texts: list[str]) -> list[list[float]]:
-    valid_texts = [
+    texts = [
         text.strip()
         for text in texts
-        if text.strip()
     ]
 
-    if not valid_texts:
+    if not texts:
         raise ValueError(
             "没有可用于向量化的文本"
         )
 
     embeddings = _get_embeddings()
-    return embeddings.embed_documents(valid_texts)
+    return embeddings.embed_documents(texts)
 
 def embed_query(text: str) -> list[float]:
     text = text.strip()
