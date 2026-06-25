@@ -83,4 +83,24 @@ class VectorStore:
             cls,
             document_id: int
     ):
-        pass
+        collection = cls._ensure_collection()
+
+        try:
+            collection.delete(
+                where={
+                    "document_id": document_id
+                }
+            )
+
+            logger.info(
+                "成功删除文档 %s 的向量数据",
+                document_id
+            )
+
+        except Exception:
+            logger.exception(
+            "删除文档 %s 向量失败",
+            document_id
+            )
+            raise
+
