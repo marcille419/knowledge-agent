@@ -218,18 +218,6 @@ Authorization: Bearer <token>
 - 基于检索结果的 RAG 问答
 - 问答结果返回来源文件名和 chunk 内容预览
 - 文档删除后异步清理 ChromaDB 向量数据，并记录清理失败日志
-- ChromaDB 本地运行数据已从 Git 跟踪范围中移除
-- 文档处理服务已从 FastAPI `HTTPException` 解耦，路由层负责 HTTP 异常转换
-
-待完善：
-
-- 将 JWT `SECRET_KEY`、过期时间等安全配置迁移到环境变量
-- 增加 Alembic 数据库迁移
-- 统一异常响应格式
-- 为核心服务补充自动化测试
-- 增加文档处理状态字段，区分未处理、处理中、处理成功和处理失败
-- 增加 ChromaDB 向量清理失败后的重试或补偿机制
-- 改造文档重新处理流程，避免 MySQL chunk 与 ChromaDB 向量在中途失败时出现不一致
 
 ## 开发提示
 
