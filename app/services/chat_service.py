@@ -5,6 +5,36 @@ from app.models.document_chunk import DocumentChunk
 from app.services.llm_service import generate_answer
 from app.services.retrieval_service import retrieve_relevant_chunks
 
+def build_content_preview(content: str, max_length: int = 120) -> str:
+    content = content.strip().replace("\n", " ")
+
+    if len(content) <= max_length:
+        return content
+
+    return content[:max_length] + "..."
+
+
+def build_sources(chunks: list[DocumentChunk]) -> list[dict]:
+    sources = []
+
+    for index, chunk in enumerate(chunks, start=1):
+        filename = None
+
+        if chunk.document is not None:
+            filename = chunk.document.filename
+
+        sources.append(
+            {
+                "source_index": index,
+                "chunk_id": chunk.id,
+                "document_id": chunk.document_id,
+                "filename": filename,
+                "chunk_index": chunk.chunk_index,
+                "content_preview": build_content_preview(chunk.content),
+            }
+        )
+
+    return sources
 
 def build_context(chunks: list[DocumentChunk]) -> str:
     if not chunks:
@@ -23,7 +53,7 @@ def build_prompt(query: str, context: str) -> str:
     template = dedent("""
         你是一个知识库问答助手。
 
-        请严格根据下面的资料回答用户问题。
+        请严格根据下面的资料回答用户问题，关键事实尽量使用资料原文表述。
         如果资料中没有答案，请回答：根据已提供资料无法回答该问题。
         不要编造资料之外的内容。
 
@@ -62,14 +92,7 @@ def answer_question(
     result = {
         "query": query,
         "answer": answer,
-        "sources": [
-            {
-                "chunk_id": chunk.id,
-                "document_id": chunk.document_id,
-                "chunk_index": chunk.chunk_index,
-            }
-            for chunk in chunks
-        ]
+        "sources": build_sources(chunks)
     }
 
     if debug:

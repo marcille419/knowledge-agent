@@ -188,7 +188,7 @@ Authorization: Bearer <token>
 
 - `query`：用户问题
 - `answer`：模型回答
-- `sources`：引用的 chunk 信息
+- `sources`：引用的 chunk 信息，包含 `chunk_id`、`document_id`、`filename`、`chunk_index` 和内容预览
 - `prompt`：当 `debug=true` 时返回最终提示词
 
 ## 数据模型
@@ -216,16 +216,8 @@ Authorization: Bearer <token>
 - Embedding 生成和 ChromaDB 写入
 - 按用户过滤的向量检索
 - 基于检索结果的 RAG 问答
-
-待完善：
-
-- 将 JWT `SECRET_KEY`、过期时间等安全配置迁移到环境变量
-- 增加 Alembic 数据库迁移
-- 统一异常响应格式
-- 为核心服务补充自动化测试
-- 增加文档处理状态字段，区分未处理、处理中、处理成功和处理失败
-- 处理删除文档时 ChromaDB 向量同步删除
-- 修复代码文件中已有中文注释和错误信息的编码乱码
+- 问答结果返回来源文件名和 chunk 内容预览
+- 文档删除后异步清理 ChromaDB 向量数据，并记录清理失败日志
 
 ## 开发提示
 
@@ -233,3 +225,4 @@ Authorization: Bearer <token>
 - 处理文档前必须先完成上传，并使用登录 token 调用处理接口。
 - 当前 `JWT SECRET_KEY` 写在 `app/utils/jwt.py` 中，不适合生产环境直接使用。
 - 当前建表脚本只负责创建表，不负责结构迁移；模型变更后需要自行处理数据库结构同步。
+- `data/chroma/` 属于本地向量数据库运行数据，不应提交到 Git。
