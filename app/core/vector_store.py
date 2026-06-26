@@ -1,11 +1,16 @@
 import logging
-from typing import Optional, Any
 from chromadb import PersistentClient
 from chromadb.api.models.Collection import Collection
+from typing import Optional, Any, TypedDict
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+class VectorSearchResult(TypedDict):
+    chunk_id: int
+    document_id: int
+    distance: float
 
 class VectorStore:
     client: Optional[PersistentClient] = None
@@ -54,9 +59,14 @@ class VectorStore:
             raise ValueError(
                 "ids不能为空"
             )
-        if metadatas is not None and len(ids) != len(metadatas):
+        if len(ids) != len(embeddings):
             raise ValueError(
                 "ids 与 embeddings 数量不一致"
+            )
+
+        if metadatas is not None and len(ids) != len(metadatas):
+            raise ValueError(
+                "ids 与 metadatas 数量不一致"
             )
 
         try:
@@ -82,7 +92,7 @@ class VectorStore:
     def delete_document(
             cls,
             document_id: int
-    ):
+    ) -> None:
         collection = cls._ensure_collection()
 
         try:
@@ -99,8 +109,58 @@ class VectorStore:
 
         except Exception:
             logger.exception(
-            "删除文档 %s 向量失败",
-            document_id
+                "删除文档 %s 向量失败",
+                document_id
             )
             raise
 
+    @classmethod
+    def search(
+            cls,
+            query_embedding: list[float],
+            top_k: int = 5,
+            where: Optional[dict[str, Any]] = None
+    ) -> list[VectorSearchResult]:
+        collection = cls._ensure_collection()
+
+        if not query_embedding:
+            raise ValueError("query_embedding不能为空")
+        if top_k <= 0:
+            raise ValueError("top_k 必须大于 0")
+
+        try:
+            results = collection.query(
+                query_embeddings = [query_embedding],
+                n_results = top_k,
+                where = where
+            )
+
+            metadatas = results.get("metadatas", [[]])[0]
+            distances = results.get("distances", [[]])[0]
+
+            search_results: list[VectorSearchResult] = []
+
+            for metadata, distance in zip(metadatas, distances):
+                if metadata is None:
+                    continue
+
+                search_results.append(
+                    {
+                        "chunk_id": int(metadata["chunk_id"]),
+                        "document_id": int(metadata["document_id"]),
+                        "distance": float(distance),
+                    }
+                )
+
+            logger.info(
+                "向量检索成功，返回 %d 条结果",
+                len(search_results)
+            )
+
+            return search_results
+
+        except Exception:
+            logger.exception(
+                "向量检索失败"
+            )
+            raise

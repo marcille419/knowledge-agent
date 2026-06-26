@@ -19,8 +19,8 @@ class AIModels:
             )
 
             cls.embeddings = HuggingFaceEmbeddings(
-                model_name=settings.EMBEDDING_MODEL,
-                model_kwargs={"device": "cpu"},
+                model_name = settings.EMBEDDING_MODEL,
+                model_kwargs = {"device": "cpu"},
             )
 
             logger.info("Embedding模型加载成功")

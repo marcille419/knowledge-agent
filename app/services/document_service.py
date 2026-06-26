@@ -44,12 +44,14 @@ def process_document(
             detail="文件不存在"
         )
     try:
-        # 删除该文档的所有旧 chunk（同步数据库）
+        # 删除该文档的所有旧chunk和向量（同步数据库）
         db.query(DocumentChunk).filter(
             DocumentChunk.document_id == document.id
         ).delete(
             synchronize_session = False
-        ) # 后期补上向量删除
+        )
+
+        VectorStore.delete_document(document.id)
 
         # 解析文件内容
         content = parse_document(document.file_path)
@@ -84,7 +86,8 @@ def process_document(
         metadatas = [
             {
                 "document_id": document.id,
-                "chunk_id": chunk.id
+                "chunk_id": chunk.id,
+                "user_id": document.user_id,
             }
             for chunk in chunk_objects
         ]
