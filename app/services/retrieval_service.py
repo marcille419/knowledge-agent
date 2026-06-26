@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.document_chunk import DocumentChunk
 from app.models.document import Document
@@ -48,7 +48,9 @@ def retrieve_relevant_chunks(
     ]
 
     # mysql回表查询 chunk 内容
-    chunks = db.query(DocumentChunk).join(Document).filter(
+    chunks = db.query(DocumentChunk).options(
+        joinedload(DocumentChunk.document)
+    ).join(Document).filter(
         DocumentChunk.id.in_(chunk_ids),
         Document.user_id == user_id
     ).all()

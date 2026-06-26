@@ -2,8 +2,10 @@ import os
 import uuid
 import logging
 
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, Path
-
+from fastapi import (
+    APIRouter, UploadFile, File, Depends,
+    HTTPException, Query, Path
+)
 from sqlalchemy.orm import Session
 
 from app.database.db import get_db
@@ -12,7 +14,12 @@ from app.models.user import User
 from app.core.deps import get_current_user
 from app.schemas.response import BaseResponse
 from app.schemas.document import DocumentInfo, DocumentList
-from app.services.document_service import process_document
+from app.services.document_service import (
+    DocumentFileNotFoundError,
+    DocumentProcessValidationError,
+    process_document,
+)
+from app.core.vector_store import VectorStore
 
 router = APIRouter(
     prefix = "/document",
@@ -57,7 +64,7 @@ def upload_document(
         )
 
     # 文件后缀检查
-    ext = os.path.splitext(file.filename)[1]
+    ext = os.path.splitext(file.filename)[1].lower()
     if ext.lower() not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code = 400,
@@ -65,7 +72,7 @@ def upload_document(
         )
 
     # Content-Type检查
-    print(file.content_type)
+    logger.debug("上传文件 content_type=%s", file.content_type)
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
             status_code = 400,
@@ -163,12 +170,22 @@ def delete_document(
     except Exception as e:
         db.rollback()
         logger.error(
-            f"删除文档事务失败: document_id={document_id}, error={str(e)}",
+            f"删除文档数据库事务失败: document_id={document_id}, error={str(e)}",
             exc_info=True
         )
         raise HTTPException(
-            status_code = 500,
-            detail = "删除失败"
+            status_code=500,
+            detail="删除失败"
+        )
+
+    try:
+        VectorStore.delete_document(doc_id)
+
+    except Exception as e:
+        logger.warning(
+            f"文档已从数据库删除，但向量删除失败: "
+            f"user_id={current_user.id}, document_id={doc_id}, error={str(e)}",
+            exc_info=True
         )
 
     try:
@@ -177,12 +194,14 @@ def delete_document(
 
     except Exception as e:
         logger.warning(
-            f"物理文件残留: user_id={current_user.id}, document_id={doc_id}, file_path={file_path}, error={str(e)}",
+            f"物理文件残留: "
+            f"user_id={current_user.id}, document_id={doc_id}, "
+            f"file_path={file_path}, error={str(e)}",
             exc_info=True
         )
 
     return BaseResponse(
-        message = "删除成功"
+        message="删除成功"
     )
 
 @router.post("/{document_id}/process", response_model = BaseResponse)
@@ -203,7 +222,20 @@ def process_document_route(
             detail = "文档不存在"
         )
 
-    process_document(doc, db)
+    try:
+        process_document(doc, db)
+
+    except DocumentFileNotFoundError as exc:
+        raise HTTPException(
+            status_code=404,
+            detail=str(exc)
+        ) from exc
+
+    except DocumentProcessValidationError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc)
+        ) from exc
 
     return BaseResponse(
         message = "文档解析完成"

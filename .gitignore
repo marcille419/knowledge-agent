@@ -61,6 +61,7 @@ uploads/
 # =========================
 chroma_db/
 chromadb/
+data/chroma/
 
 # =========================
 # Cache

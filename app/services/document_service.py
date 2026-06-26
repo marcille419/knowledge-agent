@@ -1,7 +1,6 @@
 import os
 import logging
 
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.document_chunk import DocumentChunk
@@ -12,6 +11,15 @@ from app.services.embedding_service import embed_documents
 from app.core.vector_store import VectorStore
 
 logger = logging.getLogger(__name__)
+
+
+class DocumentFileNotFoundError(FileNotFoundError):
+    """文档记录存在，但对应的物理文件不存在。"""
+
+
+class DocumentProcessValidationError(ValueError):
+    """文档内容不满足处理条件。"""
+
 
 def save_chunks(
     document_id : int,
@@ -39,10 +47,7 @@ def process_document(
     db : Session
 ):
     if not os.path.exists(document.file_path):
-        raise HTTPException(
-            status_code=404,
-            detail="文件不存在"
-        )
+        raise DocumentFileNotFoundError("文件不存在")
     try:
         # 删除该文档的所有旧chunk和向量（同步数据库）
         db.query(DocumentChunk).filter(
@@ -64,7 +69,7 @@ def process_document(
             if c.get("content", "").strip()
         ]
         if not chunks:
-            raise ValueError(
+            raise DocumentProcessValidationError(
                 f"文档 {document.id} 没有有效文本块"
             )
 
@@ -112,5 +117,3 @@ def process_document(
         db.rollback()
         logger.exception("文档 %d 处理失败", document.id)
         raise
-
-# 后期重构内容: Service层最好不要依赖HTTPException
